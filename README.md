@@ -1,6 +1,6 @@
 # Render Keepalive
 
-Small React + Vite frontend that keeps Render-hosted backends awake by sending periodic pings. The UI is optional—endpoints can be pre-seeded through configuration so the page starts monitoring as soon as it loads.
+Minimal React + Vite runner that keeps Render-hosted backends awake by sending periodic pings through a single `useEffect`. There is no UI; everything happens as soon as the page loads.
 
 ## Requirements
 
@@ -14,9 +14,9 @@ npm install
 npm run dev
 ```
 
-Open the printed local URL and add any Render backend URLs you want to keep warm. The app will regularly ping each endpoint and show the most recent status, latency, and errors.
+Leave the dev server running. The effect will continuously ping the configured endpoints in the background and log the results to the browser console.
 
-## Preloading endpoints (recommended)
+## Configuration
 
 Create a `.env` file in the project root and set `VITE_PRESET_ENDPOINTS` to a comma, space, or newline separated list of URLs:
 
@@ -24,15 +24,19 @@ Create a `.env` file in the project root and set `VITE_PRESET_ENDPOINTS` to a co
 VITE_PRESET_ENDPOINTS=https://service-1.onrender.com/health,https://service-2.onrender.com/ping
 ```
 
-Preset URLs are merged with anything stored in `localStorage`, so they reappear after refresh or deployments. Clearing the list from the UI reverts back to the preset values.
+Optional: override the interval by adding `VITE_PING_INTERVAL_SECONDS` (defaults to 300 seconds, minimum 10 seconds).
+
+```env
+VITE_PING_INTERVAL_SECONDS=60
+```
 
 ## Scripts
 
-- `npm run dev` – Start the Vite dev server with hot reload.
-- `npm run build` – Type-check with TypeScript and build the production bundle.
-- `npm run preview` – Preview the production build locally.
+- `npm run dev` - Start the Vite dev server (runs the keepalive effect in development).
+- `npm run build` - Build the production bundle.
+- `npm run preview` - Preview the production build locally.
 
 ## Notes
 
-- Requests are sent with `fetch(..., { keepalive: true, mode: 'no-cors' })`. Some services may report failures in the UI due to CORS, but the ping still reaches the backend.
-- The minimum interval is 10 seconds to avoid overwhelming downstream services.
+- Requests use `fetch(url, { keepalive: true, mode: 'no-cors', cache: 'no-store' })`. Opaque responses still keep the backend warm even if they appear as failures in the console.
+- Invalid URLs in `VITE_PRESET_ENDPOINTS` are skipped with a warning.
